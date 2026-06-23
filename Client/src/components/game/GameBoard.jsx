@@ -1,19 +1,62 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { POSITIONS } from "../../constants/gameConstants";
 
 gsap.registerPlugin(useGSAP);
 
+const WIN_LINES = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
+
+function sameLine(lineA, lineB) {
+  if (!Array.isArray(lineA) || !Array.isArray(lineB)) return false;
+  if (lineA.length !== 3 || lineB.length !== 3) return false;
+
+  return lineA.every((value, index) => value === lineB[index]);
+}
+
 export default function GameBoard({
   board,
   selectedCell,
   lastMove,
+  winner = null,
+  winningLine = null,
   onCellClick,
   disabled = false,
 }) {
   const boardRef = useRef(null);
+  const winLineRef = useRef(null);
   const pieceRefs = useRef({});
+
+  const safeWinningLine = useMemo(() => {
+    if (!winner) return null;
+    if (!Array.isArray(winningLine)) return null;
+    if (winningLine.length !== 3) return null;
+
+    const normalizedLine = winningLine.map(Number);
+
+    const isKnownLine = WIN_LINES.some((line) =>
+      sameLine(line, normalizedLine)
+    );
+
+    if (!isKnownLine) return null;
+
+    const isReallyVisible = normalizedLine.every(
+      (index) => board[index]?.player === winner
+    );
+
+    return isReallyVisible ? normalizedLine : null;
+  }, [board, winner, winningLine]);
+
+  const winningLineKey = safeWinningLine ? safeWinningLine.join("-") : "";
 
   useGSAP(
     () => {
@@ -81,10 +124,85 @@ export default function GameBoard({
     }
   );
 
+  useGSAP(
+    () => {
+      if (!safeWinningLine || !winLineRef.current) return;
+
+      const winningPieceElements = safeWinningLine
+        .map((index) => {
+          const pieceId = board[index]?.id;
+          return pieceId ? pieceRefs.current[pieceId] : null;
+        })
+        .filter(Boolean);
+
+      gsap.killTweensOf(winLineRef.current);
+      gsap.killTweensOf(winningPieceElements);
+
+      const tl = gsap.timeline();
+
+      tl.fromTo(
+        winLineRef.current,
+        {
+          opacity: 0,
+          scaleX: 0,
+          transformOrigin: "center center",
+        },
+        {
+          opacity: 1,
+          scaleX: 1,
+          duration: 0.65,
+          ease: "power3.out",
+        }
+      );
+
+      tl.to(
+        winLineRef.current,
+        {
+          opacity: 0.42,
+          duration: 0.35,
+          repeat: 5,
+          yoyo: true,
+          ease: "sine.inOut",
+        },
+        "-=0.05"
+      );
+
+      if (winningPieceElements.length > 0) {
+        tl.fromTo(
+          winningPieceElements,
+          {
+            scale: 1,
+            boxShadow: "0 18px 45px rgba(0,0,0,0.35)",
+          },
+          {
+            scale: 1.12,
+            boxShadow: "0 0 42px rgba(250,204,21,0.85)",
+            duration: 0.35,
+            repeat: 5,
+            yoyo: true,
+            ease: "sine.inOut",
+          },
+          0.65
+        );
+      }
+
+      return () => {
+        tl.kill();
+      };
+    },
+    {
+      scope: boardRef,
+      dependencies: [winningLineKey],
+    }
+  );
+
   function handleClick(index) {
     if (disabled) return;
     onCellClick(index);
   }
+
+  const firstPoint = safeWinningLine ? POSITIONS[safeWinningLine[0]] : null;
+  const lastPoint = safeWinningLine ? POSITIONS[safeWinningLine[2]] : null;
 
   return (
     <div
@@ -106,6 +224,35 @@ export default function GameBoard({
         <line x1="8" y1="8" x2="92" y2="92" className="stroke-cyan-300/50" strokeWidth="1.4" />
         <line x1="92" y1="8" x2="8" y2="92" className="stroke-cyan-300/50" strokeWidth="1.4" />
       </svg>
+
+      {safeWinningLine && firstPoint && lastPoint && (
+        <svg
+          className="pointer-events-none absolute inset-0 z-30 h-full w-full"
+          viewBox="0 0 100 100"
+        >
+          <defs>
+            <filter id="winnerGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.8" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <line
+            ref={winLineRef}
+            x1={firstPoint.left}
+            y1={firstPoint.top}
+            x2={lastPoint.left}
+            y2={lastPoint.top}
+            stroke="rgba(250, 204, 21, 0.96)"
+            strokeWidth="4.2"
+            strokeLinecap="round"
+            filter="url(#winnerGlow)"
+          />
+        </svg>
+      )}
 
       {POSITIONS.map((pos, index) => (
         <div
@@ -140,6 +287,7 @@ export default function GameBoard({
         if (!piece) return null;
 
         const pos = POSITIONS[index];
+        const isWinningPiece = safeWinningLine?.includes(index);
 
         return (
           <div
@@ -148,7 +296,7 @@ export default function GameBoard({
               left: `${pos.left}%`,
               top: `${pos.top}%`,
             }}
-            className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+            className="absolute z-40 -translate-x-1/2 -translate-y-1/2"
           >
             <button
               ref={(el) => {
@@ -158,7 +306,7 @@ export default function GameBoard({
               onClick={() => handleClick(index)}
               disabled={disabled}
               className={[
-                "grid h-11 w-11 place-items-center rounded-full text-lg font-black shadow-2xl will-change-transform sm:h-13 sm:w-13 sm:text-xl md:h-15 md:w-15",
+                "grid h-11 w-11 place-items-center rounded-full text-lg font-black shadow-2xl will-change-transform sm:h-[52px] sm:w-[52px] sm:text-xl md:h-[60px] md:w-[60px]",
                 disabled
                   ? "cursor-not-allowed"
                   : "cursor-pointer hover:scale-105",
@@ -167,6 +315,8 @@ export default function GameBoard({
                   : "bg-gradient-to-br from-cyan-300 to-blue-700 text-white shadow-cyan-400/30",
                 selectedCell === index
                   ? "ring-4 ring-yellow-300/70"
+                  : isWinningPiece
+                  ? "ring-4 ring-yellow-300/90"
                   : "ring-1 ring-white/10",
               ].join(" ")}
               aria-label={`Pion ${piece.player}`}

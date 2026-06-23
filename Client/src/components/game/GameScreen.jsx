@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import {
@@ -26,6 +26,7 @@ export default function GameScreen({
   selectedCell,
   message,
   winner,
+  winningLine,
   xCount,
   oCount,
   xMovedCount,
@@ -41,8 +42,28 @@ export default function GameScreen({
 }) {
   const root = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
 
-  const isFinished = Boolean(winner);
+  const hasVisibleWinningLine =
+    Boolean(winner) &&
+    Array.isArray(winningLine) &&
+    winningLine.length === 3 &&
+    winningLine.every((index) => board[index]?.player === winner);
+
+  const isFinished = hasVisibleWinningLine;
+
+  useEffect(() => {
+    if (!hasVisibleWinningLine) {
+      setShowWinnerModal(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowWinnerModal(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [hasVisibleWinningLine]);
 
   useGSAP(
     () => {
@@ -83,7 +104,7 @@ export default function GameScreen({
 
   useGSAP(
     () => {
-      if (!winner) return;
+      if (!showWinnerModal) return;
 
       gsap.fromTo(
         ".winner-backdrop",
@@ -130,17 +151,19 @@ export default function GameScreen({
     },
     {
       scope: root,
-      dependencies: [winner],
+      dependencies: [showWinnerModal],
     }
   );
 
   function handleRestart() {
     setMenuOpen(false);
+    setShowWinnerModal(false);
     resetGame();
   }
 
   function handleBackToMenu() {
     setMenuOpen(false);
+    setShowWinnerModal(false);
     onBackToMenu();
   }
 
@@ -232,6 +255,8 @@ export default function GameScreen({
               board={board}
               selectedCell={selectedCell}
               lastMove={lastMove}
+              winner={winner}
+              winningLine={winningLine}
               onCellClick={handleCellClick}
               disabled={isFinished}
             />
@@ -346,26 +371,26 @@ export default function GameScreen({
               <RuleCard
                 number="01"
                 title="Placement"
-                text="Chaque joueur place 3 pions sur les intersections libres. La victoire est impossible pendant cette phase."
+                text="Chaque joueur place un pion à tour de rôle sur une intersection libre. Si un joueur aligne ses 3 pions pendant cette phase, il gagne immédiatement."
               />
 
               <RuleCard
                 number="02"
                 title="Déplacement"
-                text="Après les 6 pions posés, un pion se déplace vers une intersection voisine libre."
+                text="Si aucun alignement n’est fait après la pose des 6 pions, chaque joueur déplace à tour de rôle un pion vers une intersection voisine libre en suivant les lignes."
               />
 
               <RuleCard
                 number="03"
                 title="Victoire"
-                text="Pour gagner, il faut aligner ses 3 pions et avoir déjà déplacé chacun de ses 3 pions au moins une fois."
+                text="Le premier joueur qui aligne ses 3 pions sur une ligne, une colonne ou une diagonale gagne la partie."
               />
             </div>
           </div>
         </aside>
       </div>
 
-      {isFinished && (
+      {isFinished && showWinnerModal && (
         <div className="fixed inset-0 z-50 grid place-items-center px-4">
           <div className="winner-backdrop absolute inset-0 bg-slate-950/80 backdrop-blur-md" />
 
