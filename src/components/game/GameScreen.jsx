@@ -17,6 +17,8 @@ import RuleCard from "../ui/RuleCard";
 
 gsap.registerPlugin(useGSAP);
 
+const WINNER_MODAL_DELAY_MS = 4200;
+
 export default function GameScreen({
   board,
   phase,
@@ -44,6 +46,10 @@ export default function GameScreen({
   const [menuOpen, setMenuOpen] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
 
+  const winningLineKey = Array.isArray(winningLine)
+    ? winningLine.join("-")
+    : "";
+
   const hasVisibleWinningLine =
     Boolean(winner) &&
     Array.isArray(winningLine) &&
@@ -60,10 +66,10 @@ export default function GameScreen({
 
     const timer = setTimeout(() => {
       setShowWinnerModal(true);
-    }, 3000);
+    }, WINNER_MODAL_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [hasVisibleWinningLine]);
+  }, [hasVisibleWinningLine, winningLineKey]);
 
   useGSAP(
     () => {

@@ -136,9 +136,12 @@ export default function GameBoard({
         .filter(Boolean);
 
       gsap.killTweensOf(winLineRef.current);
-      gsap.killTweensOf(winningPieceElements);
 
-      const tl = gsap.timeline();
+      const delayBeforeHighlight = lastMove?.from === null ? 0.2 : 0.95;
+
+      const tl = gsap.timeline({
+        delay: delayBeforeHighlight,
+      });
 
       tl.fromTo(
         winLineRef.current,
@@ -158,9 +161,9 @@ export default function GameBoard({
       tl.to(
         winLineRef.current,
         {
-          opacity: 0.42,
+          opacity: 0.45,
           duration: 0.35,
-          repeat: 5,
+          repeat: 7,
           yoyo: true,
           ease: "sine.inOut",
         },
@@ -168,19 +171,16 @@ export default function GameBoard({
       );
 
       if (winningPieceElements.length > 0) {
-        tl.fromTo(
+        tl.to(
           winningPieceElements,
-          {
-            scale: 1,
-            boxShadow: "0 18px 45px rgba(0,0,0,0.35)",
-          },
           {
             scale: 1.12,
             boxShadow: "0 0 42px rgba(250,204,21,0.85)",
             duration: 0.35,
-            repeat: 5,
+            repeat: 7,
             yoyo: true,
             ease: "sine.inOut",
+            overwrite: false,
           },
           0.65
         );
@@ -213,16 +213,72 @@ export default function GameBoard({
       <div className="absolute inset-0 rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,255,255,0.08),transparent_35%,rgba(34,211,238,0.06))]" />
 
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
-        <line x1="8" y1="8" x2="92" y2="8" className="stroke-emerald-300/75" strokeWidth="1.65" />
-        <line x1="8" y1="50" x2="92" y2="50" className="stroke-emerald-300/75" strokeWidth="1.65" />
-        <line x1="8" y1="92" x2="92" y2="92" className="stroke-emerald-300/75" strokeWidth="1.65" />
+        <line
+          x1="8"
+          y1="8"
+          x2="92"
+          y2="8"
+          className="stroke-emerald-300/75"
+          strokeWidth="1.65"
+        />
+        <line
+          x1="8"
+          y1="50"
+          x2="92"
+          y2="50"
+          className="stroke-emerald-300/75"
+          strokeWidth="1.65"
+        />
+        <line
+          x1="8"
+          y1="92"
+          x2="92"
+          y2="92"
+          className="stroke-emerald-300/75"
+          strokeWidth="1.65"
+        />
 
-        <line x1="8" y1="8" x2="8" y2="92" className="stroke-emerald-300/75" strokeWidth="1.65" />
-        <line x1="50" y1="8" x2="50" y2="92" className="stroke-emerald-300/75" strokeWidth="1.65" />
-        <line x1="92" y1="8" x2="92" y2="92" className="stroke-emerald-300/75" strokeWidth="1.65" />
+        <line
+          x1="8"
+          y1="8"
+          x2="8"
+          y2="92"
+          className="stroke-emerald-300/75"
+          strokeWidth="1.65"
+        />
+        <line
+          x1="50"
+          y1="8"
+          x2="50"
+          y2="92"
+          className="stroke-emerald-300/75"
+          strokeWidth="1.65"
+        />
+        <line
+          x1="92"
+          y1="8"
+          x2="92"
+          y2="92"
+          className="stroke-emerald-300/75"
+          strokeWidth="1.65"
+        />
 
-        <line x1="8" y1="8" x2="92" y2="92" className="stroke-cyan-300/50" strokeWidth="1.4" />
-        <line x1="92" y1="8" x2="8" y2="92" className="stroke-cyan-300/50" strokeWidth="1.4" />
+        <line
+          x1="8"
+          y1="8"
+          x2="92"
+          y2="92"
+          className="stroke-cyan-300/50"
+          strokeWidth="1.4"
+        />
+        <line
+          x1="92"
+          y1="8"
+          x2="8"
+          y2="92"
+          className="stroke-cyan-300/50"
+          strokeWidth="1.4"
+        />
       </svg>
 
       {safeWinningLine && firstPoint && lastPoint && (
