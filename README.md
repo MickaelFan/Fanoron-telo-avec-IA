@@ -16,7 +16,7 @@
 | -------------------- | ------------------------------------------------------------------------------------------------ |
 | **Établissement**    | Institut Supérieur de Polytechnique de Madagascar ([www.ispm-edu.com](https://www.ispm-edu.com)) |
 | **Groupe de projet** | Tojo · Mickaël · Toky · Fabio · Schenny · Fifaliana                                              |
-| **Module**           | Intelligence Artificielle — Projet pratique (5 heures)                                           |
+| **Module**           | Algorithmique Avancée — Projet pratique (5 heures)                                               |
 | **Dépôt Git**        | [github.com/MickaelFan/Fanoron-telo-avec-IA](https://github.com/MickaelFan/Fanoron-telo-avec-IA) |
 
 ---
@@ -412,6 +412,6 @@ Mesures sur les **120 coups Minimax réel** (profondeur 7-10) :
 
 <div align="center">
 
-**Fanoron-telo** — Projet académique ISPM · Intelligence Artificielle
+**Fanoron-telo** — Projet académique ISPM · Algorithmique Avancée
 
 </div>
